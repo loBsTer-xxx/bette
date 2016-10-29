@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Latest Odds</title>
+    <style>
+      body {
+        font-family: "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
+        font-size: 10px;
+        width: 600px;
+      }
+      #status {
+        max-width: 800px;
+      }
+      table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+      }
+      th, td {
+        padding: 4px 10px;
+      }
+      th {
+        text-align: left;
+      }
+    </style>
+    <script src="popup.js"></script>
+  </head>
+  <body>
+    <select id="marketMaker">
+      <option value="PaddyPower">PaddyPower</option>
+      <option value="LadBrokes">LadBrokes</option>
+      <option value="Coral">Coral</option>
+      <option value="Betfair">Betfair</option>
+    </select>
+    <select id="bettingType">
+      <option value="QualifyingBet">QualifyingBet</option>
+      <option value="FreeBet">FreeBet</option>
+      <option value="RiskFreeBet">RiskFreeBet</option>
+    </select>
+    <input type="number" name="stake" value="0"><br>
+    <button id='calculate'>Calculate</button>
+    <table id="exchangeOddsTable" class="tablesorter" />
+    <table id="marketMakerOddsTable" class="tablesorter" />
+    <div id="status"></div>
+  </body>
+</html>
+
