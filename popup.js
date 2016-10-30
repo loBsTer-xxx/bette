@@ -68,69 +68,12 @@ function processTabDomcument(bettingResponse) {
     updateMarketMakerOddsTable(marketMakerBettings); // Refresh the bookie odds.
   }
 
+  calculateAllProfits();
+
   console.log(marketMakerBettings);
   console.log(exchangeBettingByEventName);
 
   renderStatus("Updated");
-}
-
-function createMarketMakerOddsTableHeader(table) {
-  var header = table.createTHead();
-  var row = header.insertRow(0);
-
-  var cell1 = document.createElement('th');
-  var cell2 = document.createElement('th');
-  var cell3 = document.createElement('th');
-  var cell4 = document.createElement('th');
-  var cell5 = document.createElement('th');
-  var cell6 = document.createElement('th');
-  var cell7 = document.createElement('th');
-  cell1.innerHTML = "Website";
-  cell2.innerHTML = "Date";
-  cell3.innerHTML = "Time";
-  cell4.innerHTML = "Name";
-  cell5.innerHTML = "Home";
-  cell6.innerHTML = "Draw";
-  cell7.innerHTML = "Away";
-  
-  row.appendChild(cell1);
-  row.appendChild(cell2);
-  row.appendChild(cell3);
-  row.appendChild(cell4);
-  row.appendChild(cell5);
-  row.appendChild(document.createElement('th'));
-  row.appendChild(document.createElement('th'));
-  row.appendChild(cell6);
-  row.appendChild(document.createElement('th'));
-  row.appendChild(document.createElement('th'));
-  row.appendChild(cell7);
-  row.appendChild(document.createElement('th'));
-  row.appendChild(document.createElement('th'));
-  
-  table.createTBody();
-}
-
-function createExchangeOddsTableHeader(table) {
-  var header = table.createTHead();
-  var row = header.insertRow(0);
-  var cell1 = row.insertCell(-1);
-  var cell2 = row.insertCell(-1);
-  var cell3 = row.insertCell(-1);
-  row.insertCell(-1);
-  var cell4 = row.insertCell(-1);
-  row.insertCell(-1);
-  var cell5 = row.insertCell(-1);
-  row.insertCell(-1);
-  var cell6 = row.insertCell(-1);
-  row.insertCell(-1);
-  cell1.innerHTML = "Website";
-  cell2.innerHTML = "Time";
-  cell3.innerHTML = "Name";
-  cell4.innerHTML = "Home";
-  cell5.innerHTML = "Draw";
-  cell6.innerHTML = "Away";
-  
-  table.createTBody();
 }
 
 function clearTable(table) {
@@ -203,7 +146,7 @@ function updateMarketMakerOddsTable(bettings) {
     var betting = bettings[i];
     var row = table.insertRow(-1); // Insert at the end.
 
-    var cell1 = row.insertCell(-1);
+    //var cell1 = row.insertCell(-1);
     var cell2 = row.insertCell(-1);
     var cell3 = row.insertCell(-1);
     var cell4 = row.insertCell(-1);
@@ -217,7 +160,7 @@ function updateMarketMakerOddsTable(bettings) {
     var cell12 = row.insertCell(-1);
     var cell13 = row.insertCell(-1);
 
-    cell1.innerHTML = betting.website;
+    //cell1.innerHTML = betting.website;
     cell2.innerHTML = betting.eventDate;
     cell3.innerHTML = betting.eventTime;
     cell4.innerHTML = betting.eventName;
@@ -260,8 +203,6 @@ function calculateQualifyingBet() {
   if (isNaN(stake)) {
     return;
   }
-
-  profitByEventName = {};
 
   for (var i in marketMakerBettings) {
     var betting = marketMakerBettings[i];
@@ -316,9 +257,15 @@ function buildJsonProfits(homeProfit, drawProfit, awayProfit) {
   }
 }
 
-function clickHandler(e) {
+function stakeInputHandler(e) {
+  calculateAllProfits();
+}
+
+function calculateAllProfits() {
   var bettingType = getBettingType();
   console.log("Start calcuation " + getMarketMaker() + " " + bettingType);
+
+  profitByEventName = {};
 
   if (bettingType == 'QualifyingBet') {
     calculateQualifyingBet();
@@ -333,9 +280,8 @@ function clickHandler(e) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  createMarketMakerOddsTableHeader(marketMakerOddsTable);
-  
-  document.getElementById('calculate').addEventListener('click', clickHandler);
+  document.getElementById('stake').addEventListener('input', stakeInputHandler)
+  document.getElementById('bettingType').addEventListener('input', stakeInputHandler)
   
   getAllTabs(function(tab) {
     chrome.tabs.sendMessage(tab.id, {text: 'report_back'}, processTabDomcument);
