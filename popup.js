@@ -211,7 +211,7 @@ function calculateQualifyingBet() {
       continue;
     }
 
-    var layCommission = betting.commission;
+    var layCommission = exchangeBetting.commission;
 
     var homeBackOdd = parseFloat(betting.home.bet.odd);
     var homeLayOdd = parseFloat(exchangeBetting.home.lay.odd);
