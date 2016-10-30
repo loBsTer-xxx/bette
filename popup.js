@@ -43,17 +43,33 @@ function renderStatus(statusText) {
   document.getElementById('status').textContent = statusText;
 }
 
-var marketMakerBettingResponses = [];
-var exchangeBettingResponse = [];
+var marketMakerBettings = [];
+var exchangeBettingByEventName = {};
+var profitByEventName = {};
 
 function processTabDomcument(bettingResponse) {
-  if (bettingResponse.isBookMaker) {
-    marketMakerBettingResponses.push(bettingResponse);
-    updateMarketMakerOddsTable(bettingResponse);    
-  } else {
-    exchangeBettingResponse.push(bettingResponse);
-    updateExchangeOddsTable(bettingResponse);
+  if (bettingResponse === undefined) {
+    return;
   }
+
+  console.log(bettingResponse);
+
+  if (bettingResponse.isBookMaker) {
+    for (var i in bettingResponse.betting) {
+      marketMakerBettings.push(bettingResponse.betting[i]);
+    }
+    updateMarketMakerOddsTable(marketMakerBettings);
+  } else {
+    for (var i in bettingResponse.betting) {
+      var betting = bettingResponse.betting[i];
+      exchangeBettingByEventName[betting.eventName] = betting;
+    }
+    updateExchangeOddsTable(bettingResponse.betting);
+    updateMarketMakerOddsTable(marketMakerBettings); // Refresh the bookie odds.
+  }
+
+  console.log(marketMakerBettings);
+  console.log(exchangeBettingByEventName);
 
   renderStatus("Updated");
 }
@@ -68,19 +84,28 @@ function createMarketMakerOddsTableHeader(table) {
   var cell4 = document.createElement('th');
   var cell5 = document.createElement('th');
   var cell6 = document.createElement('th');
+  var cell7 = document.createElement('th');
   cell1.innerHTML = "Website";
-  cell2.innerHTML = "Time";
-  cell3.innerHTML = "Name";
-  cell4.innerHTML = "Home";
-  cell5.innerHTML = "Draw";
-  cell6.innerHTML = "Away";
+  cell2.innerHTML = "Date";
+  cell3.innerHTML = "Time";
+  cell4.innerHTML = "Name";
+  cell5.innerHTML = "Home";
+  cell6.innerHTML = "Draw";
+  cell7.innerHTML = "Away";
   
   row.appendChild(cell1);
   row.appendChild(cell2);
   row.appendChild(cell3);
   row.appendChild(cell4);
   row.appendChild(cell5);
+  row.appendChild(document.createElement('th'));
+  row.appendChild(document.createElement('th'));
   row.appendChild(cell6);
+  row.appendChild(document.createElement('th'));
+  row.appendChild(document.createElement('th'));
+  row.appendChild(cell7);
+  row.appendChild(document.createElement('th'));
+  row.appendChild(document.createElement('th'));
   
   table.createTBody();
 }
@@ -91,6 +116,7 @@ function createExchangeOddsTableHeader(table) {
   var cell1 = row.insertCell(-1);
   var cell2 = row.insertCell(-1);
   var cell3 = row.insertCell(-1);
+  row.insertCell(-1);
   var cell4 = row.insertCell(-1);
   row.insertCell(-1);
   var cell5 = row.insertCell(-1);
@@ -108,15 +134,18 @@ function createExchangeOddsTableHeader(table) {
 }
 
 function clearTable(table) {
-  while(table.rows.length > 0) {
-    table.deleteRow(0);
+  while(table.rows.length > 1) {
+    table.deleteRow(1);
   }
 }
 
-function updateExchangeOddsTable(bettingResponse) {
-  var table = document.getElementById("exchangeOddsTable").getElementsByTagName('tbody')[0];
+function updateExchangeOddsTable(bettings) {
+  var exchangeOddsTable = document.getElementById("exchangeOddsTable");
+  clearTable(exchangeOddsTable);
+  var table = exchangeOddsTable.getElementsByTagName('tbody')[0];
 
-  for (var i = 0; i < bettingResponse.betting.length; i++) {
+  for (var i in bettings) {
+    var betting = bettings[i];
     // Bet row
     var betRow = table.insertRow(-1); // Insert at the end.
     var betCell1 = betRow.insertCell(-1);
@@ -128,15 +157,17 @@ function updateExchangeOddsTable(bettingResponse) {
     var betCell7 = betRow.insertCell(-1);
     var betCell8 = betRow.insertCell(-1);
     var betCell9 = betRow.insertCell(-1);
-    betCell1.innerHTML = bettingResponse.website;
-    betCell2.innerHTML = bettingResponse.betting[i].eventTime;
-    betCell3.innerHTML = bettingResponse.betting[i].eventName;
-    betCell4.innerHTML = bettingResponse.betting[i].home.bet.odd;
-    betCell5.innerHTML = bettingResponse.betting[i].home.bet.quantity;
-    betCell6.innerHTML = bettingResponse.betting[i].draw.bet.odd;
-    betCell7.innerHTML = bettingResponse.betting[i].draw.bet.quantity;
-    betCell8.innerHTML = bettingResponse.betting[i].away.bet.odd;
-    betCell9.innerHTML = bettingResponse.betting[i].away.bet.quantity;
+    var betCell10 = betRow.insertCell(-1);
+    betCell1.innerHTML = betting.website;
+    betCell2.innerHTML = betting.eventTime;
+    betCell3.innerHTML = betting.eventName;
+    betCell4.innerHTML = 'Back';
+    betCell5.innerHTML = betting.home.bet.odd;
+    betCell6.innerHTML = betting.home.bet.quantity;
+    betCell7.innerHTML = betting.draw.bet.odd;
+    betCell8.innerHTML = betting.draw.bet.quantity;
+    betCell9.innerHTML = betting.away.bet.odd;
+    betCell10.innerHTML = betting.away.bet.quantity;
     
     // Lay row
     var layRow = table.insertRow(-1); // Insert at the end.
@@ -149,35 +180,64 @@ function updateExchangeOddsTable(bettingResponse) {
     var layCell7 = layRow.insertCell(-1);
     var layCell8 = layRow.insertCell(-1);
     var layCell9 = layRow.insertCell(-1);
-    layCell1.innerHTML = bettingResponse.website;
-    layCell2.innerHTML = bettingResponse.betting[i].eventTime;
-    layCell3.innerHTML = bettingResponse.betting[i].eventName;
-    layCell4.innerHTML = bettingResponse.betting[i].home.lay.odd;
-    layCell5.innerHTML = bettingResponse.betting[i].home.lay.quantity;
-    layCell6.innerHTML = bettingResponse.betting[i].draw.lay.odd;
-    layCell7.innerHTML = bettingResponse.betting[i].draw.lay.quantity;
-    layCell8.innerHTML = bettingResponse.betting[i].away.lay.odd;
-    layCell9.innerHTML = bettingResponse.betting[i].away.lay.quantity;
+    var layCell10 = layRow.insertCell(-1);
+    layCell1.innerHTML = betting.website;
+    layCell2.innerHTML = betting.eventTime;
+    layCell3.innerHTML = betting.eventName;
+    layCell4.innerHTML = 'Lay';
+    layCell5.innerHTML = betting.home.lay.odd;
+    layCell6.innerHTML = betting.home.lay.quantity;
+    layCell7.innerHTML = betting.draw.lay.odd;
+    layCell8.innerHTML = betting.draw.lay.quantity;
+    layCell9.innerHTML = betting.away.lay.odd;
+    layCell10.innerHTML = betting.away.lay.quantity;
   }
 }
 
-function updateMarketMakerOddsTable(bettingResponse) {
-  var table = document.getElementById("marketMakerOddsTable").getElementsByTagName('tbody')[0];
-  var i;
-  for (i = 0; i < bettingResponse.betting.length; i++) {
+function updateMarketMakerOddsTable(bettings) {
+  var marketMakerOddsTable = document.getElementById("marketMakerOddsTable");
+  clearTable(marketMakerOddsTable);
+  var table = marketMakerOddsTable.getElementsByTagName('tbody')[0];
+
+  for (var i in bettings) {
+    var betting = bettings[i];
     var row = table.insertRow(-1); // Insert at the end.
+
     var cell1 = row.insertCell(-1);
     var cell2 = row.insertCell(-1);
     var cell3 = row.insertCell(-1);
     var cell4 = row.insertCell(-1);
     var cell5 = row.insertCell(-1);
     var cell6 = row.insertCell(-1);
-    cell1.innerHTML = bettingResponse.website;
-    cell2.innerHTML = bettingResponse.betting[i].eventTime;
-    cell3.innerHTML = bettingResponse.betting[i].eventName;
-    cell4.innerHTML = bettingResponse.betting[i].homeOdd;
-    cell5.innerHTML = bettingResponse.betting[i].drawOdd;
-    cell6.innerHTML = bettingResponse.betting[i].awayOdd;
+    var cell7 = row.insertCell(-1);
+    var cell8 = row.insertCell(-1);
+    var cell9 = row.insertCell(-1);
+    var cell10 = row.insertCell(-1);
+    var cell11 = row.insertCell(-1);
+    var cell12 = row.insertCell(-1);
+    var cell13 = row.insertCell(-1);
+
+    cell1.innerHTML = betting.website;
+    cell2.innerHTML = betting.eventDate;
+    cell3.innerHTML = betting.eventTime;
+    cell4.innerHTML = betting.eventName;
+    cell5.innerHTML = betting.home.bet.odd;
+    cell8.innerHTML = betting.draw.bet.odd;
+    cell11.innerHTML = betting.away.bet.odd;
+    
+    var exchangeBetting = exchangeBettingByEventName[betting.eventName];
+    if (exchangeBetting != undefined) {
+      cell6.innerHTML = exchangeBetting.home.lay.odd;
+      cell9.innerHTML = exchangeBetting.draw.lay.odd;
+      cell12.innerHTML = exchangeBetting.away.lay.odd;
+    }
+
+    var profit = profitByEventName[betting.eventName];
+    if (profit != undefined) {
+      cell7.innerHTML = profit.home.totalProfit.toFixed(2);
+      cell10.innerHTML = profit.draw.totalProfit.toFixed(2);
+      cell13.innerHTML = profit.away.totalProfit.toFixed(2);
+    }
   }
 }
 
@@ -192,21 +252,88 @@ function getBettingType() {
 }
 
 function getStake() {
-  
+  return document.getElementById("stake").value;
+}
+
+function calculateQualifyingBet() {
+  var stake = parseFloat(getStake());
+  if (isNaN(stake)) {
+    return;
+  }
+
+  profitByEventName = {};
+
+  for (var i in marketMakerBettings) {
+    var betting = marketMakerBettings[i];
+    var exchangeBetting = exchangeBettingByEventName[betting.eventName];
+    if (exchangeBetting === undefined) {
+      continue;
+    }
+
+    var layCommission = betting.commission;
+
+    var homeBackOdd = parseFloat(betting.home.bet.odd);
+    var homeLayOdd = parseFloat(exchangeBetting.home.lay.odd);
+    var homeProfit = calculateProfit(
+        stake, homeBackOdd, homeLayOdd, layCommission);
+
+    var drawBackOdd = parseFloat(betting.draw.bet.odd);
+    var drawLayOdd = parseFloat(exchangeBetting.draw.lay.odd);
+    var drawProfit = calculateProfit(
+        stake, drawBackOdd, drawLayOdd, layCommission);
+
+    var awayBackOdd = parseFloat(betting.away.bet.odd);
+    var awayLayOdd = parseFloat(exchangeBetting.away.lay.odd);
+    var awayProfit = calculateProfit(
+        stake, awayBackOdd, awayLayOdd, layCommission);
+
+    profitByEventName[betting.eventName] = buildJsonProfits(
+        homeProfit, drawProfit, awayProfit);
+  }
+}
+
+function calculateProfit(backStake, backOdd, layOdd, layCommission) {
+  if (isNaN(backOdd) || isNaN(layOdd)) {
+    return;
+  }
+  var layStake = backStake * backOdd / (layOdd - layCommission);
+  var totalProfit = backStake * (backOdd - 1) - layStake * (layOdd - 1);
+  return {
+    backStake: backStake,
+    backOdd: backOdd,
+    layStake: layStake,
+    layOdd: layOdd,
+    layCommission: layCommission,
+    totalProfit: totalProfit,
+  };
+}
+
+function buildJsonProfits(homeProfit, drawProfit, awayProfit) {
+  return {
+    home: homeProfit,
+    draw: drawProfit,
+    away: awayProfit,
+  }
 }
 
 function clickHandler(e) {
-  console.log("Start calcuation " + getMarketMaker() + getBettingType());
+  var bettingType = getBettingType();
+  console.log("Start calcuation " + getMarketMaker() + " " + bettingType);
+
+  if (bettingType == 'QualifyingBet') {
+    calculateQualifyingBet();
+  } else if (bettingType == 'FreeBet') {
+    console.log("FreeBet calcuation not implemented yet");
+  } else if (bettingType == 'RiskFreeBet') {
+    console.log("RiskFreeBet calcuation not implemented yet");
+  }
+
+  console.log(profitByEventName);
+  updateMarketMakerOddsTable(marketMakerBettings);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  var marketMakerOddsTable = document.getElementById("marketMakerOddsTable");
-  clearTable(marketMakerOddsTable);
   createMarketMakerOddsTableHeader(marketMakerOddsTable);
-  
-  var exchangeOddsTable = document.getElementById("exchangeOddsTable");
-  clearTable(exchangeOddsTable);
-  createExchangeOddsTableHeader(exchangeOddsTable);
   
   document.getElementById('calculate').addEventListener('click', clickHandler);
   

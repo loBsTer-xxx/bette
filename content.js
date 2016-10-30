@@ -22,22 +22,28 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
 function getSmarketsBettings(response) {
   response.website = 'Smarkets';
   response.isBookMaker = false;
+  response.commission = 0.02;
   var wrappers = document.getElementsByClassName("market");
-  var datetime = document.getElementsByClassName("timeago")[0].title.split(' - ');
+  var datetime = document.getElementById('masthead')
+      .getElementsByTagName('h2')[0].childNodes[0].nodeValue
+      .trim()
+      .replace('\n', '').split(' · ');
+  var eventDate = datetime[0];
   var eventTime = datetime[1];
-  var eventTitle = document.getElementById("formatted_event_name").textContent.trim();
+  var homeTeam = document.getElementById("formatted_event_name")
+      .getElementsByClassName('home')[0].textContent;
+  var awayTeam = document.getElementById("formatted_event_name")
+      .getElementsByClassName('away')[0].textContent;
+  var eventTitle = homeTeam + ' vs. ' + awayTeam;
+  eventTitle = normalizeTeamName(eventTitle);
   var bestBets = wrappers[0].getElementsByClassName("offer best");
   var bestLays = wrappers[0].getElementsByClassName("bid best");
-  var homeBetOdd = getOnlyTextContent(bestBets[0], "price");
-  var homeBetQty = getOnlyTextContent(bestBets[0], "qty");
-  var drawBetOdd = getOnlyTextContent(bestBets[1], "price");
-  var homeBetQty = getOnlyTextContent(bestBets[1], "qty");
-  var awayBetOdd = getOnlyTextContent(bestBets[2], "price");
-  var homeBetQty = getOnlyTextContent(bestBets[2], "qty");
   var homeBet = buildSmarketsOdds(bestBets[0], bestLays[0]);
   var drawBet = buildSmarketsOdds(bestBets[1], bestLays[1]);
   var awayBet = buildSmarketsOdds(bestBets[2], bestLays[2]);
-  response.betting.push(buildJsonResponse(eventTime, eventTitle, homeBetOdd, drawBetOdd, awayBetOdd, homeBet, drawBet, awayBet));
+  response.betting.push(buildJsonResponse(response.website,
+      response.isBookMaker, response.commission,
+      eventDate, eventTime, eventTitle, homeBet, drawBet, awayBet));
 }
 
 function buildSmarketsOdds(bestBet, bestLay) {
@@ -48,31 +54,41 @@ function buildSmarketsOdds(bestBet, bestLay) {
   return buildJsonOdd(betOdd, betQty, layOdd, layQty);
 }
 
-// Only works for "Competitions" button.
+// Only works for "Competitions" page.
 function getLadBrokesBettings(response) {
   response.website = 'LadBrokes';
   response.isBookMaker = true;
+  response.commission = 0;
   var wrappers = document.getElementsByClassName("event-list");
   var i;
   for (i = 0; i < wrappers.length; i++) {
-    var datetime = wrappers[i].getElementsByClassName('time')[0].innerHTML.split('<br>');
+    var datetime = wrappers[i].getElementsByClassName('time')[0].innerHTML
+        .split('<br>');
     if (datetime.length < 2) {
       return;
     }
     var eventDate = datetime[0];
     var eventTime = datetime[1];
-    var eventTitle = getOnlyTextContent(wrappers[i], 'name').replace(' v ', ' vs. ');
+    var eventTitle = getOnlyTextContent(wrappers[i], 'name')
+        .replace(' v ', ' vs. ');
+    eventTitle = normalizeTeamName(eventTitle);
     var odds = wrappers[i].getElementsByClassName("price");
-    var homeOdd = odds[0].textContent.trim();
-    var drawOdd = odds[1].textContent.trim();
-    var awayOdd = odds[2].textContent.trim();
-    response.betting.push(buildJsonResponse(eventTime, eventTitle, homeOdd, drawOdd, awayOdd));
+    var homeOdd = buildJsonBackOdd(
+        odds[0].textContent.trim(), null /* quantity */);
+    var drawOdd = buildJsonBackOdd(
+        odds[1].textContent.trim(), null /* quantity */);
+    var awayOdd = buildJsonBackOdd(
+        odds[2].textContent.trim(), null /* quantity */);
+    response.betting.push(buildJsonResponse(response.website,
+        response.isBookMaker, response.commission,
+        eventDate, eventTime, eventTitle, homeOdd, drawOdd, awayOdd));
   }
 }
 
 function getPaddyPowerBettings(response) {
   response.website = 'PaddyPower';
   response.isBookMaker = true;
+  response.commission = 0;
   // Add live matches.
   var wrappers = document.getElementsByClassName("fb_day_type_wrapper");
   var i;
@@ -83,16 +99,23 @@ function getPaddyPowerBettings(response) {
     var events = wrappers[i].getElementsByClassName("pp_fb_event");
     var j;
     for (j = 0; j < events.length; j++) {
+      var eventDate = '';
       var eventTime = getOnlyTextContent(events[j], "fb_event_time");
       if (eventTime == '') {
         continue;
       }
-      var eventTitle = getOnlyTextContent(events[j], "fb_event_name").replace(' v ', ' vs. ');
+      var eventTitle = getOnlyTextContent(events[j], "fb_event_name")
+          .replace(' v ', ' vs. ');
       var odds = events[j].getElementsByClassName("oddssmall");
-      var homeOdd = odds[0].textContent.trim();
-      var drawOdd = odds[1].textContent.trim();
-      var awayOdd = odds[2].textContent.trim();
-      response.betting.push(buildJsonResponse(eventTime, eventTitle, homeOdd, drawOdd, awayOdd));
+      var homeOdd = buildJsonBackOdd(
+          odds[0].textContent.trim(), null /* quantity */);
+      var drawOdd = buildJsonBackOdd(
+          odds[1].textContent.trim(), null /* quantity */);
+      var awayOdd = buildJsonBackOdd(
+          odds[2].textContent.trim(), null /* quantity */);
+      response.betting.push(buildJsonResponse(response.website,
+          response.isBookMaker, response.commission,
+          eventDate, eventTime, eventTitle, homeOdd, drawOdd, awayOdd));
     }
   }
 }
@@ -110,17 +133,31 @@ function getOnlyOdd(elem, style) {
   return getOnlyTextContent(elem, style);
 }
 
-function buildJsonResponse(eventTime, eventName, homeOdd, drawOdd, awayOdd, homeBet, drawBet, awayBet) {
+function normalizeTeamName(eventTitle) {
+  return eventTitle
+      .replace('West Ham United', 'West Ham')
+      .replace('Stoke City', 'Stoke')
+      .replace('Swansea City', 'Swansea');
+}
+
+function buildJsonResponse(website, isBookMaker, commission, eventDate,
+    eventTime, eventName, homeBet, drawBet, awayBet) {
   return {
+    website: website,
+    isBookMaker: isBookMaker,
+    eventDate : eventDate,
     eventTime : eventTime,
     eventName : eventName,
-    homeOdd : homeOdd,
-    drawOdd : drawOdd,
-    awayOdd : awayOdd,
     home: homeBet,
     draw: drawBet,
     away: awayBet,
+    commission: commission,
   };
+}
+
+function buildJsonBackOdd(backOdd, backQuantity) {
+  return buildJsonOdd(
+      backOdd, backQuantity, null /* layOdd */, null /* layQuantity */)
 }
 
 function buildJsonOdd(betOdd, betQuantity, layOdd, layQuantity) {
