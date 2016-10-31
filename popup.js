@@ -263,7 +263,8 @@ function calculateRiskFreeBetProfit(
   if (isNaN(backOdd) || isNaN(layOdd)) {
     return;
   }
-  var layStake = backStake * backOdd - backStake / (layOdd - layCommission);
+  var cashback = backStake; // Use the back stake as cashback amount by default.
+  var layStake = (backStake * backOdd - cashback) / (layOdd - layCommission);
   var totalProfit = backStake * (backOdd - 1) - layStake * (layOdd - 1);
   return {
     backStake: backStake,
