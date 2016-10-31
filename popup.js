@@ -164,15 +164,15 @@ function updateMarketMakerOddsTable(bettings) {
     cell2.innerHTML = betting.eventDate;
     cell3.innerHTML = betting.eventTime;
     cell4.innerHTML = betting.eventName;
-    cell5.innerHTML = betting.home.bet.odd;
-    cell8.innerHTML = betting.draw.bet.odd;
-    cell11.innerHTML = betting.away.bet.odd;
+    cell5.innerHTML = betting.home.bet.odd.toFixed(2);
+    cell8.innerHTML = betting.draw.bet.odd.toFixed(2);
+    cell11.innerHTML = betting.away.bet.odd.toFixed(2);
     
     var exchangeBetting = exchangeBettingByEventName[betting.eventName];
     if (exchangeBetting != undefined) {
-      cell6.innerHTML = exchangeBetting.home.lay.odd;
-      cell9.innerHTML = exchangeBetting.draw.lay.odd;
-      cell12.innerHTML = exchangeBetting.away.lay.odd;
+      cell6.innerHTML = exchangeBetting.home.lay.odd.toFixed(2);
+      cell9.innerHTML = exchangeBetting.draw.lay.odd.toFixed(2);
+      cell12.innerHTML = exchangeBetting.away.lay.odd.toFixed(2);
     }
 
     var profit = profitByEventName[betting.eventName];

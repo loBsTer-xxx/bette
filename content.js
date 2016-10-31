@@ -7,8 +7,17 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
       betting: [],
     };
     var url = window.location.href;
+
     if (url.search('smarkets') >= 0) {
-      getSmarketsBettings(response);
+      response.website = 'Smarkets';
+      response.isBookMaker = false;
+      response.commission = 0.02;
+
+      if (url.search('coupon') >= 0) {
+        getSmarketsCoupons(response);
+      } else {
+        getSmarketsBettings(response);
+      }
     } else if (url.search('paddypower') >= 0) {
       getPaddyPowerBettings(response);
     } else if (url.search('ladbrokes') >= 0) {
@@ -19,10 +28,34 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   }
 });
 
+function getSmarketsCoupons(response) {
+  var wrappers = document.querySelectorAll("tr[data-winners]");
+  for (var i in wrappers) {
+    if (wrappers[i].children === undefined) {
+      continue;
+    }
+    var eventTitle = wrappers[i].children[0].textContent.trim();
+    eventTitle = normalizeTeamName(eventTitle);
+    var eventDate = null;
+    var eventTime = null;
+    var homeBet = buildSmarketsCouponOdds(wrappers[i].children[1]);
+    var drawBet = buildSmarketsCouponOdds(wrappers[i].children[2]);
+    var awayBet = buildSmarketsCouponOdds(wrappers[i].children[3]);
+    response.betting.push(buildJsonResponse(response.website,
+        response.isBookMaker, response.commission,
+        eventDate, eventTime, eventTitle, homeBet, drawBet, awayBet));
+  }
+}
+
+function buildSmarketsCouponOdds(quote) {
+  var betOdd = getOnlyTextContent(quote, "offer");
+  var betQty = null;
+  var layOdd = getOnlyTextContent(quote, "bid");
+  var layQty = null;
+  return buildJsonOdd(betOdd, betQty, layOdd, layQty);
+}
+
 function getSmarketsBettings(response) {
-  response.website = 'Smarkets';
-  response.isBookMaker = false;
-  response.commission = 0.02;
   var wrappers = document.getElementsByClassName("market");
   var datetime = document.getElementById('masthead')
       .getElementsByTagName('h2')[0].childNodes[0].nodeValue
@@ -137,7 +170,14 @@ function normalizeTeamName(eventTitle) {
   return eventTitle
       .replace('West Ham United', 'West Ham')
       .replace('Stoke City', 'Stoke')
-      .replace('Swansea City', 'Swansea');
+      .replace('Swansea City', 'Swansea')
+      .replace('Manchester United', 'Manchester Utd')
+      .replace('Swansea City', 'Swansea')
+      .replace('Leicester City', 'Leicester')
+      .replace('West Bromwich Albion', 'West Brom')
+      .replace('AFC Bournemouth', 'Bournemouth')
+      .replace('Tottenham Hotspur', 'Tottenham')
+      .replace('Hull City', 'Hull');
 }
 
 function buildJsonResponse(website, isBookMaker, commission, eventDate,
@@ -163,11 +203,11 @@ function buildJsonBackOdd(backOdd, backQuantity) {
 function buildJsonOdd(betOdd, betQuantity, layOdd, layQuantity) {
   return {
     bet: {
-      odd: betOdd,
+      odd: parseFloat(betOdd),
       quantity: betQuantity
     },
     lay: {
-      odd: layOdd,
+      odd: parseFloat(layOdd),
       quantity: layQuantity
     }
   }
