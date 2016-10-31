@@ -195,11 +195,11 @@ function getBettingType() {
 }
 
 function getStake() {
-  return document.getElementById("stake").value;
+  return parseFloat(document.getElementById("stake").value);
 }
 
-function calculateQualifyingBet() {
-  var stake = parseFloat(getStake());
+function calculate(calculateProfitCallback) {
+  var stake = getStake();
   if (isNaN(stake)) {
     return;
   }
@@ -212,32 +212,58 @@ function calculateQualifyingBet() {
     }
 
     var layCommission = exchangeBetting.commission;
-
-    var homeBackOdd = parseFloat(betting.home.bet.odd);
-    var homeLayOdd = parseFloat(exchangeBetting.home.lay.odd);
-    var homeProfit = calculateProfit(
-        stake, homeBackOdd, homeLayOdd, layCommission);
-
-    var drawBackOdd = parseFloat(betting.draw.bet.odd);
-    var drawLayOdd = parseFloat(exchangeBetting.draw.lay.odd);
-    var drawProfit = calculateProfit(
-        stake, drawBackOdd, drawLayOdd, layCommission);
-
-    var awayBackOdd = parseFloat(betting.away.bet.odd);
-    var awayLayOdd = parseFloat(exchangeBetting.away.lay.odd);
-    var awayProfit = calculateProfit(
-        stake, awayBackOdd, awayLayOdd, layCommission);
+    var homeProfit = calculateProfitCallback(
+        stake, betting.home.bet.odd, exchangeBetting.home.lay.odd, layCommission);
+    var drawProfit = calculateProfitCallback(
+        stake, betting.draw.bet.odd, exchangeBetting.draw.lay.odd, layCommission);
+    var awayProfit = calculateProfitCallback(
+        stake, betting.away.bet.odd, exchangeBetting.away.lay.odd, layCommission);
 
     profitByEventName[betting.eventName] = buildJsonProfits(
         homeProfit, drawProfit, awayProfit);
   }
 }
 
-function calculateProfit(backStake, backOdd, layOdd, layCommission) {
+function calculateQualifyingBetProfit(
+    backStake, backOdd, layOdd, layCommission) {
   if (isNaN(backOdd) || isNaN(layOdd)) {
     return;
   }
   var layStake = backStake * backOdd / (layOdd - layCommission);
+  var totalProfit = backStake * (backOdd - 1) - layStake * (layOdd - 1);
+  return {
+    backStake: backStake,
+    backOdd: backOdd,
+    layStake: layStake,
+    layOdd: layOdd,
+    layCommission: layCommission,
+    totalProfit: totalProfit,
+  };
+}
+
+function calculateFreeBetProfit(
+    backStake, backOdd, layOdd, layCommission) {
+  if (isNaN(backOdd) || isNaN(layOdd)) {
+    return;
+  }
+  var layStake = backStake * (backOdd - 1) / (layOdd - layCommission);
+  var totalProfit = backStake * (backOdd - 1) - layStake * (layOdd - 1);
+  return {
+    backStake: backStake,
+    backOdd: backOdd,
+    layStake: layStake,
+    layOdd: layOdd,
+    layCommission: layCommission,
+    totalProfit: totalProfit,
+  };
+}
+
+function calculateRiskFreeBetProfit(
+    backStake, backOdd, layOdd, layCommission) {
+  if (isNaN(backOdd) || isNaN(layOdd)) {
+    return;
+  }
+  var layStake = backStake * backOdd - backStake / (layOdd - layCommission);
   var totalProfit = backStake * (backOdd - 1) - layStake * (layOdd - 1);
   return {
     backStake: backStake,
@@ -268,11 +294,11 @@ function calculateAllProfits() {
   profitByEventName = {};
 
   if (bettingType == 'QualifyingBet') {
-    calculateQualifyingBet();
+    calculate(calculateQualifyingBetProfit);
   } else if (bettingType == 'FreeBet') {
-    console.log("FreeBet calcuation not implemented yet");
+    calculate(calculateFreeBetProfit);
   } else if (bettingType == 'RiskFreeBet') {
-    console.log("RiskFreeBet calcuation not implemented yet");
+    calculate(calculateRiskFreeBetProfit);
   }
 
   console.log(profitByEventName);
