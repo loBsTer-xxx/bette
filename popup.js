@@ -64,7 +64,7 @@ function processTabDomcument(bettingResponse) {
       var betting = bettingResponse.betting[i];
       exchangeBettingByEventName[betting.eventName] = betting;
     }
-    updateExchangeOddsTable(bettingResponse.betting);
+    updateExchangeOddsTable(exchangeBettingByEventName);
     updateMarketMakerOddsTable(marketMakerBettings); // Refresh the bookie odds.
   }
 
@@ -105,11 +105,11 @@ function updateExchangeOddsTable(bettings) {
     betCell2.innerHTML = betting.eventTime;
     betCell3.innerHTML = betting.eventName;
     betCell4.innerHTML = 'Back';
-    betCell5.innerHTML = betting.home.bet.odd;
+    betCell5.innerHTML = betting.home.bet.odd.toFixed(2);
     betCell6.innerHTML = betting.home.bet.quantity;
-    betCell7.innerHTML = betting.draw.bet.odd;
+    betCell7.innerHTML = betting.draw.bet.odd.toFixed(2);
     betCell8.innerHTML = betting.draw.bet.quantity;
-    betCell9.innerHTML = betting.away.bet.odd;
+    betCell9.innerHTML = betting.away.bet.odd.toFixed(2);
     betCell10.innerHTML = betting.away.bet.quantity;
     
     // Lay row
@@ -128,11 +128,11 @@ function updateExchangeOddsTable(bettings) {
     layCell2.innerHTML = betting.eventTime;
     layCell3.innerHTML = betting.eventName;
     layCell4.innerHTML = 'Lay';
-    layCell5.innerHTML = betting.home.lay.odd;
+    layCell5.innerHTML = betting.home.lay.odd.toFixed(2);
     layCell6.innerHTML = betting.home.lay.quantity;
-    layCell7.innerHTML = betting.draw.lay.odd;
+    layCell7.innerHTML = betting.draw.lay.odd.toFixed(2);
     layCell8.innerHTML = betting.draw.lay.quantity;
-    layCell9.innerHTML = betting.away.lay.odd;
+    layCell9.innerHTML = betting.away.lay.odd.toFixed(2);
     layCell10.innerHTML = betting.away.lay.quantity;
   }
 }
@@ -306,11 +306,20 @@ function calculateAllProfits() {
   updateMarketMakerOddsTable(marketMakerBettings);
 }
 
+function getDataFromAllTabs() {
+  getAllTabs(function(tab) {
+    chrome.tabs.sendMessage(tab.id, {text: 'report_back'}, processTabDomcument);
+  })
+
+  renderStatus(new Date().toUTCString());
+
+  // Call the method every second.
+  setTimeout(getDataFromAllTabs, 1000);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('stake').addEventListener('input', stakeInputHandler)
   document.getElementById('bettingType').addEventListener('input', stakeInputHandler)
   
-  getAllTabs(function(tab) {
-    chrome.tabs.sendMessage(tab.id, {text: 'report_back'}, processTabDomcument);
-  })
+  getDataFromAllTabs();
 });

@@ -60,13 +60,14 @@ function getSmarketsBettings(response) {
   var datetime = document.getElementById('masthead')
       .getElementsByTagName('h2')[0].childNodes[0].nodeValue
       .trim()
-      .replace('\n', '').split(' · ');
+      .replace('\n', '')
+      .split(' · ');
   var eventDate = datetime[0];
   var eventTime = datetime[1];
   var homeTeam = document.getElementById("formatted_event_name")
-      .getElementsByClassName('home')[0].textContent;
+      .firstElementChild.textContent;
   var awayTeam = document.getElementById("formatted_event_name")
-      .getElementsByClassName('away')[0].textContent;
+      .lastElementChild.textContent;
   var eventTitle = homeTeam + ' vs. ' + awayTeam;
   eventTitle = normalizeTeamName(eventTitle);
   var bestBets = wrappers[0].getElementsByClassName("offer best");
@@ -168,16 +169,24 @@ function getOnlyOdd(elem, style) {
 
 function normalizeTeamName(eventTitle) {
   return eventTitle
-      .replace('West Ham United', 'West Ham')
-      .replace('Stoke City', 'Stoke')
-      .replace('Swansea City', 'Swansea')
       .replace('Manchester United', 'Manchester Utd')
-      .replace('Swansea City', 'Swansea')
-      .replace('Leicester City', 'Leicester')
       .replace('West Bromwich Albion', 'West Brom')
       .replace('AFC Bournemouth', 'Bournemouth')
       .replace('Tottenham Hotspur', 'Tottenham')
-      .replace('Hull City', 'Hull');
+      .replace('Brighton & Hove Albion', 'Brighton')
+      .replace('Burton Albion', 'Burton')
+      .replace('Wolverhampton Wanderers', 'Wolves')
+      .replace('Blackburn Rovers', 'Blackburn')
+      .replace('Preston North End', 'Preston')
+      .replace('Queens Park Rangers', 'QPR')
+      .replace('Legia Warszawa', 'Legia Warsaw')
+      .replace('Olympique Lyonnais', 'Lyon')
+      .replace('Bolton Wanderers', 'Bolton')
+      .replace(' Athletic', '')
+      .replace(' United', '')
+      .replace(' County', '')
+      .replace(' Town', '')
+      .replace(' City', '')
 }
 
 function buildJsonResponse(website, isBookMaker, commission, eventDate,
